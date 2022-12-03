@@ -1,5 +1,8 @@
 pragma solidity ^0.8.5;
 
+import { CourtFactory } from "./CourtFactory.sol";
+import { Court } from "./Court.sol";
+
 interface IERC20 {
 	function transfer(address to, uint256 amount) external returns (bool);
     function transferFrom(
@@ -122,7 +125,12 @@ contract Market {
 		erc20 = IERC20(_erc20Address);
 		marketOwner = msg.sender;
 
-		// TODO - Setup court here
+		_setupCourt(address(this), msg.sender, _juries, courtFactory);
+	}
+
+	function _setupCourt(address _marketAddress, address _marketOwner, address[] memory _juries, address courtFactory) private {
+		CourtFactory _courtFactory = CourtFactory(courtFactory);
+		courtAddress = _courtFactory.createCourt(_marketAddress, _marketOwner, _juries);
 	}
 
 	function createDeal(
@@ -337,7 +345,9 @@ contract Market {
 		order.status = OrderStatus.InDispute;
 
 
-		// TODO - raise dispute on court here
+		// raise dispute on court
+		Court _court = Court(courtAddress);
+		_court.createDispute(order.dealId, msg.sender, order.userAddress, order.amount);
 
 		emit DisputeRaised(order.dealId, msg.sender, order.userAddress, order.amount);
 	}
